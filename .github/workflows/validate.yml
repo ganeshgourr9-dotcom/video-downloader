@@ -1,10 +1,10 @@
-name: Validate VideoDrop
+name: Validate VideoDrop Vinext Preview
 
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main, feature/real-download-engine]
+  push:
+    branches: [main, feature/real-download-engine, vinext-preview]
 
 permissions:
   contents: read
@@ -19,8 +19,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:vinext
         env:
+          CLOUDFLARE_PREVIEW_BUILD: "true"
           NEXT_PUBLIC_DOWNLOADER_API_URL: https://example.invalid
   downloader-api:
     runs-on: ubuntu-latest
