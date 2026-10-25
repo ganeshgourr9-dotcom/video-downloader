@@ -232,7 +232,10 @@ export default function Home() {
                 <button className="official-button download-button" type="button" onClick={handleApiDownload} disabled={isLoading}>
                   {isLoading ? "डाउनलोड तैयार हो रहा है…" : `↓ ${selectedFormat.toUpperCase()} डाउनलोड करें`}
                 </button>
-              </div>\n            )}\n\n            {downloadUrl && (
+              </div>
+            )}
+
+            {downloadUrl && (
               <a
                 className="official-button download-button"
                 href={downloadUrl}
