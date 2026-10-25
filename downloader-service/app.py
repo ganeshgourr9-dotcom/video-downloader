@@ -53,14 +53,13 @@ def validate_public_url(value: str) -> str:
 
 
 def extractor_args() -> dict:
-    # YouTube returned 429 for the initial watch webpage. Skip that request
-    # and try the downgraded TV client first, then browser clients as fallbacks.
-    # PO Token support remains configured for clients that request one.
-    logger.info("YouTube extraction: skip initial webpage; clients=tv_downgraded,web_safari,mweb; PO Token server=http://127.0.0.1:4416")
+    # Try the client order recommended by the BgUtils PO-token provider docs.
+    # Keep normal webpage extraction enabled because skipping it can prevent
+    # yt-dlp from obtaining the initial player configuration on some responses.
+    logger.info("YouTube extraction: clients=mweb,tv,web_safari; webpage extraction enabled; PO Token server=http://127.0.0.1:4416")
     return {
         "youtube": {
-            "player_client": ["tv_downgraded", "web_safari", "mweb"],
-            "player_skip": ["webpage"],
+            "player_client": ["mweb", "tv", "web_safari"],
         },
         "youtubepot-bgutilhttp": {"base_url": "http://127.0.0.1:4416"},
     }
