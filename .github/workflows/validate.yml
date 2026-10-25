@@ -2,38 +2,23 @@ name: Validate VideoDrop Vinext Preview
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feature/real-download-engine]
   push:
     branches: [main, feature/real-download-engine, vinext-preview]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Synchronize package lock
-        run: npm install --package-lock-only
-      - name: Commit lockfile if changed on preview branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/vinext-preview'
-        run: |
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "chore: sync Vinext dependency lockfile"
-            git push
-          fi
-      - run: npm install
+      - run: npm ci
       - run: npm run build:vinext
         env:
           NEXT_PUBLIC_DOWNLOADER_API_URL: https://example.invalid
