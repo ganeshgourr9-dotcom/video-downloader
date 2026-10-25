@@ -56,20 +56,26 @@ def validate_public_url(value: str) -> str:
 
 
 def extractor_args() -> dict:
+    # The BgUtils provider supplies the per-video PO token. Use mweb as the
+    # supported client and legacy Innertube behaviour recommended by the
+    # provider docs when newer Innertube requests fail.
     return {
-        "youtube": {"player_client": ["mweb", "tv", "web_safari"]},
-        "youtubepot-bgutilhttp": {"base_url": "http://127.0.0.1:4416"},
+        "youtube": {"player_client": ["mweb"]},
+        "youtubepot-bgutilhttp": {
+            "base_url": "http://127.0.0.1:4416",
+            "disable_innertube": ["1"],
+        },
     }
 
 
 def extract_info(url: str) -> dict:
     options = {
         "quiet": True,
-        "no_warnings": True,
+        "no_warnings": False,
         "noplaylist": True,
         "skip_download": True,
         "socket_timeout": 20,
-        "extractor_retries": 2,
+        "extractor_retries": 1,
         "ignoreerrors": False,
         "extractor_args": extractor_args(),
         "verbose": True,
@@ -79,7 +85,7 @@ def extract_info(url: str) -> dict:
             info = ydl.extract_info(url, download=False)
     except Exception as exc:
         logger.exception("yt-dlp metadata extraction failed (%s): %s", type(exc).__name__, exc)
-        raise HTTPException(status_code=422, detail="Video details could not be retrieved. The source may block extraction or require access.") from exc
+        raise HTTPException(status_code=422, detail="Video details could not be retrieved. The source may block extraction or require access. Please wait before retrying if YouTube returns 429.") from exc
     if not info or info.get("is_live"):
         raise HTTPException(status_code=422, detail="This video is unavailable or live streams are not supported.")
     duration = info.get("duration")
@@ -90,7 +96,7 @@ def extract_info(url: str) -> dict:
 
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "videodrop-downloader"}
+    return {"ok": True, "service": "videodrop-downloader", "yt_dlp_version": yt_dlp.version.__version__}
 
 
 @app.post("/api/info")
@@ -113,12 +119,12 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
     output = str(Path(tmp) / "%(title).80B.%(ext)s")
     options = {
         "quiet": True,
-        "no_warnings": True,
+        "no_warnings": False,
         "noplaylist": True,
         "socket_timeout": 20,
         "retries": 1,
         "fragment_retries": 1,
-        "extractor_retries": 2,
+        "extractor_retries": 1,
         "extractor_args": extractor_args(),
         "verbose": True,
         "outtmpl": output,
@@ -147,4 +153,5 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
         raise
     except Exception as exc:
         shutil.rmtree(tmp, ignore_errors=True)
+        logger.exception("yt-dlp download failed (%s): %s", type(exc).__name__, exc)
         raise HTTPException(status_code=422, detail="Download failed. The source may require authentication, block extraction, or use an unsupported format.") from exc
