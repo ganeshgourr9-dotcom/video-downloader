@@ -10,5 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py ./app.py
 RUN useradd --create-home --uid 10001 appuser && mkdir -p /tmp/videodrop && chown -R appuser:appuser /tmp/videodrop /app
 USER appuser
-EXPOSE 8080
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
+EXPOSE 10000
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-10000}"]
