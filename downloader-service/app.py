@@ -56,15 +56,11 @@ def validate_public_url(value: str) -> str:
 
 
 def extractor_args() -> dict:
-    # Let the installed yt-dlp version choose its maintained default YouTube
-    # player clients; hard-coding clients has caused "no player response".
-    # Keep the local BgUtils PO-token provider available when yt-dlp requests it.
-    logger.info("YouTube extraction: using yt-dlp default player clients; PO Token server=http://127.0.0.1:4416")
-    return {
-        "youtubepot-bgutilhttp": {
-            "base_url": "http://127.0.0.1:4416",
-        },
-    }
+    # Do not load the BgUtils PO-token provider plugin: it has caused failures
+    # before player response extraction in some current YouTube sessions.
+    # Let the installed yt-dlp version select its maintained default clients.
+    logger.info("YouTube extraction: BgUtils provider disabled; using yt-dlp default clients")
+    return {}
 
 def extract_info(url: str) -> dict:
     options = {
