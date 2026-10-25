@@ -1,4 +1,5 @@
 import ipaddress
+import logging
 import os
 import re
 import shutil
@@ -12,6 +13,8 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger("videodrop.downloader")
 
 app = FastAPI(title="VideoDrop Downloader API", version="0.1.0")
 origins = [item.strip().rstrip("/") for item in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",") if item.strip()]
@@ -58,6 +61,7 @@ def extract_info(url: str) -> dict:
         with yt_dlp.YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception as exc:
+        logger.exception("yt-dlp metadata extraction failed (%s): %s", type(exc).__name__, exc)
         raise HTTPException(status_code=422, detail="Video details could not be retrieved. The source may block extraction or require access.") from exc
     if not info or info.get("is_live"):
         raise HTTPException(status_code=422, detail="This video is unavailable or live streams are not supported.")
