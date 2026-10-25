@@ -1,69 +1,188 @@
-import Image from "next/image";
+﻿"use client";
+
+import { useState } from "react";
+
+type Platform = "YouTube" | "Instagram" | "Facebook";
 
 export default function Home() {
+  const [url, setUrl] = useState("");
+  const [platform, setPlatform] = useState<Platform>("YouTube");
+  const [message, setMessage] = useState("");
+  const [officialUrl, setOfficialUrl] = useState("");
+
+  function detectPlatform(value: string): Platform | null {
+    try {
+      const parsed = new URL(value.trim());
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+      if (host === "youtube.com" || host === "youtu.be" || host.endsWith(".youtube.com")) return "YouTube";
+      if (host === "instagram.com" || host.endsWith(".instagram.com")) return "Instagram";
+      if (host === "facebook.com" || host === "fb.watch" || host.endsWith(".facebook.com")) return "Facebook";
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    setOfficialUrl("");
+
+    const value = url.trim();
+    const detected = detectPlatform(value);
+
+    if (!detected) {
+      setMessage("कृपया YouTube, Instagram या Facebook का सही वीडियो लिंक डालें।");
+      return;
+    }
+
+    if (detected !== platform) {
+      setPlatform(detected);
+    }
+
+    setOfficialUrl(value);
+    setMessage(
+      "लिंक पहचान लिया गया। इस डेमो में सीधे वीडियो डाउनलोड उपलब्ध नहीं है। नीचे दिए बटन से मूल वीडियो खोलें।"
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main>
+      <header className="topbar">
+        <a className="brand" href="/" aria-label="VideoDrop Home">
+          <span className="brand-icon">V</span>
+          <span>Video<span className="brand-accent">Drop</span></span>
+        </a>
+        <span className="header-label">Free video link tool</span>
+      </header>
+
+      <section className="hero">
+        <div className="eyebrow"><span className="live-dot" /> SIMPLE · FAST · FREE</div>
+        <h1>आपका वीडियो,<br /><span>एक ही जगह।</span></h1>
+        <p className="hero-copy">
+          YouTube, Instagram या Facebook का वीडियो लिंक डालें।
+          हम लिंक पहचानकर आपको आगे का सही विकल्प दिखाएँगे।
+        </p>
+
+        <div className="platforms" aria-label="Platform selection">
+          {(["YouTube", "Instagram", "Facebook"] as Platform[]).map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`platform ${platform === item ? "selected" : ""}`}
+              onClick={() => {
+                setPlatform(item);
+                setMessage("");
+                setOfficialUrl("");
+              }}
+              aria-pressed={platform === item}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <span className={`platform-symbol ${item.toLowerCase()}`}>
+                {item === "YouTube" ? "▶" : item === "Instagram" ? "◎" : "f"}
+              </span>
+              {item}
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+
+        <form className="link-form" onSubmit={handleSubmit}>
+          <label htmlFor="video-url">वीडियो का लिंक</label>
+          <div className="input-row">
+            <span className="link-icon">↗</span>
+            <input
+              id="video-url"
+              type="url"
+              value={url}
+              onChange={(event) => {
+                setUrl(event.target.value);
+                setMessage("");
+                setOfficialUrl("");
+              }}
+              placeholder="https:// वीडियो लिंक यहाँ पेस्ट करें"
+              autoComplete="url"
+              required
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {url && (
+              <button className="clear-button" type="button" onClick={() => {
+                setUrl("");
+                setMessage("");
+                setOfficialUrl("");
+              }} aria-label="Clear link">×</button>
+            )}
+          </div>
+          <button className="submit-button" type="submit">
+            लिंक जाँचें <span>→</span>
+          </button>
+          <p className="privacy-note"><span>✓</span> कोई अकाउंट नहीं · कोई साइन-अप नहीं</p>
+        </form>
+
+        {message && (
+          <div className="result" role="status">
+            <strong>{officialUrl ? "लिंक मिल गया" : "लिंक जाँचें"}</strong>
+            <p>{message}</p>
+            {officialUrl && (
+              <a className="official-button" href={officialUrl} target="_blank" rel="noopener noreferrer">
+                मूल वीडियो खोलें ↗
+              </a>
+            )}
+          </div>
+        )}
+
+        <p className="disclaimer">
+          केवल सार्वजनिक लिंक होने से डाउनलोड की अनुमति सुनिश्चित नहीं होती।
+          वीडियो के अधिकारों और प्लेटफॉर्म के नियमों का पालन करें।
+        </p>
+      </section>
+
+      <section className="ad-section">
+        <div className="ad-label">ADVERTISEMENT</div>
+        <div className="ad-content">
+          <span className="ad-icon">▧</span>
+          <div>
+            <strong>विज्ञापन के लिए जगह</strong>
+            <p>भविष्य में विज्ञापन नेटवर्क जुड़ने पर यहाँ विज्ञापन दिख सकता है।</p>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="steps">
+        <div className="section-heading">
+          <span className="eyebrow">HOW IT WORKS</span>
+          <h2>तीन आसान चरण</h2>
+        </div>
+        <div className="step-grid">
+          <article className="step-card">
+            <span className="step-number">01</span>
+            <div className="step-icon">↗</div>
+            <h3>लिंक कॉपी करें</h3>
+            <p>अपने चुने हुए प्लेटफॉर्म से वीडियो का लिंक लें।</p>
+          </article>
+          <article className="step-card">
+            <span className="step-number">02</span>
+            <div className="step-icon">⌕</div>
+            <h3>लिंक जाँचें</h3>
+            <p>लिंक पेस्ट करें। वेबसाइट प्लेटफॉर्म की पहचान करेगी।</p>
+          </article>
+          <article className="step-card">
+            <span className="step-number">03</span>
+            <div className="step-icon">↓</div>
+            <h3>उपलब्ध विकल्प देखें</h3>
+            <p>अधिकृत डाउनलोड उपलब्ध होने पर ही डाउनलोड विकल्प इस्तेमाल करें।</p>
+          </article>
+        </div>
+      </section>
+
+      <footer className="footer">
+        <a className="brand footer-brand" href="/">Video<span className="brand-accent">Drop</span></a>
+        <p>वीडियो कंटेंट के अधिकार उसके संबंधित मालिकों के पास रहते हैं।</p>
+        <div className="footer-links">
+          <a href="mailto:contact@example.com">संपर्क</a>
+          <a href="#privacy">गोपनीयता</a>
+          <a href="#terms">नियम एवं शर्तें</a>
+        </div>
+        <small>© VideoDrop · Demo version</small>
+      </footer>
+    </main>
   );
 }
+
