@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: videodrop-downloader
+    runtime: docker
+    dockerfilePath: ./downloader-service/Dockerfile
+    dockerContext: ./downloader-service
+    healthCheckPath: /health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: MAX_DURATION_SECONDS
+        value: "3600"
+      - key: MAX_FILE_BYTES
+        value: "524288000"
