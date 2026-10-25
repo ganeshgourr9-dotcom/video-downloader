@@ -11,7 +11,6 @@ export default function Home() {
   const [officialUrl, setOfficialUrl] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
   const [downloadName, setDownloadName] = useState("videodrop-video.mp4");
-  const [hasRights, setHasRights] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<"mp4" | "mp3">("mp4");
   const [isLoading, setIsLoading] = useState(false);
   const [apiVideo, setApiVideo] = useState(false);
@@ -58,32 +57,36 @@ export default function Home() {
     }
 
     const extension = parsed.pathname.match(/\.(mp4|webm|mov|m4v|ogv)$/i)?.[1]?.toLowerCase();
-    if (!hasRights) {
-      setMessage("आगे बढ़ने से पहले पुष्टि करें कि आपको इस वीडियो को डाउनलोड करने का अधिकार है।");
-      return;
-    }
-
     if (apiBase) {
       setIsLoading(true);
+      setPlatform(detectPlatform(value) || "YouTube");
+      setMessage(`${selectedFormat.toUpperCase()} डाउनलोड तैयार हो रहा है…`);
       try {
-        const response = await fetch(`${apiBase}/api/info`, {
+        const response = await fetch(`${apiBase}/api/download`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: parsed.href }),
+          body: JSON.stringify({ url: parsed.href, format: selectedFormat }),
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.detail || "वीडियो की जानकारी नहीं मिल सकी।");
-        setPlatform(detectPlatform(value) || "YouTube");
-        setOfficialUrl(value);
-        setApiVideo(true);
-        setMessage(`वीडियो मिला: ${data.title || "वीडियो"}। अब MP4 या MP3 चुनकर डाउनलोड करें।`);
-        return;
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.detail || "डाउनलोड विफल रहा। कृपया दूसरा लिंक आज़माएँ।");
+        }
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = `videodrop-video.${selectedFormat}`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(objectUrl);
+        setMessage("डाउनलोड शुरू हो गया है।");
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "वीडियो की जानकारी प्राप्त नहीं हो सकी।");
-        return;
+        setMessage(error instanceof Error ? error.message : "डाउनलोड विफल रहा।");
       } finally {
         setIsLoading(false);
       }
+      return;
     }
 
     if (extension) {
@@ -105,7 +108,7 @@ export default function Home() {
   }
 
   async function handleApiDownload() {
-    if (!apiBase || !officialUrl || !hasRights) return;
+    if (!apiBase || !officialUrl) return;
     setIsLoading(true);
     setMessage(`${selectedFormat.toUpperCase()} तैयार हो रहा है। फ़ाइल के आकार और स्रोत के अनुसार समय लग सकता है…`);
     try {
@@ -202,16 +205,7 @@ export default function Home() {
             )}
           </div>
 
-          <label className="rights-check">
-            <input
-              type="checkbox"
-              checked={hasRights}
-              onChange={(event) => setHasRights(event.target.checked)}
-            />
-            <span>मेरे पास इस वीडियो को डाउनलोड करने या उपयोग करने का अधिकार है।</span>
-          </label>
-
-          <button className="submit-button" type="submit">
+<button className="submit-button" type="submit">
             लिंक जाँचें <span>→</span>
           </button>
           <p className="privacy-note"><span>✓</span> कोई अकाउंट नहीं · कोई साइन-अप नहीं</p>
@@ -288,7 +282,7 @@ export default function Home() {
             <span className="step-number">02</span>
             <div className="step-icon">⌕</div>
             <h3>लिंक जाँचें</h3>
-            <p>लिंक पेस्ट करें और पुष्टि करें कि आपको वीडियो डाउनलोड करने का अधिकार है।</p>
+            <p>लिंक पेस्ट करें और डाउनलोड फ़ॉर्मैट चुनें।</p>
           </article>
           <article className="step-card">
             <span className="step-number">03</span>
