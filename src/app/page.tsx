@@ -15,7 +15,7 @@ export default function Home() {
   const [selectedFormat, setSelectedFormat] = useState<"mp4" | "mp3">("mp4");
   const [isLoading, setIsLoading] = useState(false);
   const [apiVideo, setApiVideo] = useState(false);
-  const apiBase = process.env.NEXT_PUBLIC_DOWNLOADER_API_URL?.replace(/\\/$/, "");
+  const apiBase = process.env.NEXT_PUBLIC_DOWNLOADER_API_URL?.replace(/\/$/, "");
 
   function detectPlatform(value: string): Platform | null {
     try {
