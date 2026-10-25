@@ -9,11 +9,16 @@ export default function Home() {
   const [platform, setPlatform] = useState<Platform>("YouTube");
   const [message, setMessage] = useState("");
   const [officialUrl, setOfficialUrl] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
+  const [downloadName, setDownloadName] = useState("videodrop-video.mp4");
+  const [hasRights, setHasRights] = useState(false);
 
   function detectPlatform(value: string): Platform | null {
     try {
       const parsed = new URL(value.trim());
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
       const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+
       if (host === "youtube.com" || host === "youtu.be" || host.endsWith(".youtube.com")) return "YouTube";
       if (host === "instagram.com" || host.endsWith(".instagram.com")) return "Instagram";
       if (host === "facebook.com" || host === "fb.watch" || host.endsWith(".facebook.com")) return "Facebook";
@@ -23,26 +28,62 @@ export default function Home() {
     }
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function clearResults() {
     setMessage("");
     setOfficialUrl("");
+    setDownloadUrl("");
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    clearResults();
 
     const value = url.trim();
-    const detected = detectPlatform(value);
+    let parsed: URL;
 
-    if (!detected) {
-      setMessage("कृपया YouTube, Instagram या Facebook का सही वीडियो लिंक डालें।");
+    try {
+      parsed = new URL(value);
+    } catch {
+      setMessage("कृपया एक सही HTTPS वीडियो लिंक डालें।");
       return;
     }
 
-    if (detected !== platform) {
-      setPlatform(detected);
+    const isLocalhost =
+        process.env.NODE_ENV === "development" &&
+        (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
+
+      if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLocalhost)) {
+        setMessage("सुरक्षा के लिए केवल HTTPS लिंक स्वीकार किए जाते हैं।");
+        return;
+      }
+
+    const extension = parsed.pathname.match(/\.(mp4|webm|mov|m4v|ogv)$/i)?.[1]?.toLowerCase();
+
+    if (extension) {
+      if (!hasRights) {
+        setMessage("डाउनलोड से पहले पुष्टि करें कि आपको इस वीडियो को डाउनलोड करने और उपयोग करने का अधिकार है।");
+        return;
+      }
+
+      setDownloadUrl(parsed.href);
+      setDownloadName(`videodrop-video.${extension}`);
+      setMessage(
+        "वीडियो फ़ाइल जैसा लिंक पहचाना गया। डाउनलोड स्रोत की अनुमति और ब्राउज़र की नीतियों पर निर्भर करता है।"
+      );
+      return;
     }
 
+    const detected = detectPlatform(value);
+
+    if (!detected) {
+      setMessage("यह समर्थित प्लेटफ़ॉर्म लिंक या पहचानी गई वीडियो फ़ाइल नहीं है। HTTPS वीडियो फ़ाइल URL आज़माएँ।");
+      return;
+    }
+
+    setPlatform(detected);
     setOfficialUrl(value);
     setMessage(
-      "लिंक पहचान लिया गया। इस डेमो में सीधे वीडियो डाउनलोड उपलब्ध नहीं है। नीचे दिए बटन से मूल वीडियो खोलें।"
+      "सोशल-मीडिया लिंक पहचान लिया गया। यह सामान्य पेज लिंक है, सीधे वीडियो फ़ाइल नहीं। इस डेमो में इसका डाउनलोड उपलब्ध नहीं है।"
     );
   }
 
@@ -60,8 +101,8 @@ export default function Home() {
         <div className="eyebrow"><span className="live-dot" /> SIMPLE · FAST · FREE</div>
         <h1>आपका वीडियो,<br /><span>एक ही जगह।</span></h1>
         <p className="hero-copy">
-          YouTube, Instagram या Facebook का वीडियो लिंक डालें।
-          हम लिंक पहचानकर आपको आगे का सही विकल्प दिखाएँगे।
+          YouTube, Instagram या Facebook का लिंक पहचानें,
+          या अधिकृत सीधे वीडियो फ़ाइल लिंक से डाउनलोड करने का प्रयास करें।
         </p>
 
         <div className="platforms" aria-label="Platform selection">
@@ -72,8 +113,7 @@ export default function Home() {
               className={`platform ${platform === item ? "selected" : ""}`}
               onClick={() => {
                 setPlatform(item);
-                setMessage("");
-                setOfficialUrl("");
+                clearResults();
               }}
               aria-pressed={platform === item}
             >
@@ -95,21 +135,34 @@ export default function Home() {
               value={url}
               onChange={(event) => {
                 setUrl(event.target.value);
-                setMessage("");
-                setOfficialUrl("");
+                clearResults();
               }}
-              placeholder="https:// वीडियो लिंक यहाँ पेस्ट करें"
+              placeholder="https://... वीडियो लिंक यहाँ पेस्ट करें"
               autoComplete="url"
               required
             />
             {url && (
-              <button className="clear-button" type="button" onClick={() => {
-                setUrl("");
-                setMessage("");
-                setOfficialUrl("");
-              }} aria-label="Clear link">×</button>
+              <button
+                className="clear-button"
+                type="button"
+                onClick={() => {
+                  setUrl("");
+                  clearResults();
+                }}
+                aria-label="Clear link"
+              >×</button>
             )}
           </div>
+
+          <label className="rights-check">
+            <input
+              type="checkbox"
+              checked={hasRights}
+              onChange={(event) => setHasRights(event.target.checked)}
+            />
+            <span>मेरे पास इस वीडियो को डाउनलोड करने या उपयोग करने का अधिकार है।</span>
+          </label>
+
           <button className="submit-button" type="submit">
             लिंक जाँचें <span>→</span>
           </button>
@@ -118,8 +171,21 @@ export default function Home() {
 
         {message && (
           <div className="result" role="status">
-            <strong>{officialUrl ? "लिंक मिल गया" : "लिंक जाँचें"}</strong>
+            <strong>{downloadUrl ? "वीडियो फ़ाइल का लिंक मिला" : officialUrl ? "सोशल-मीडिया लिंक मिला" : "लिंक जाँचें"}</strong>
             <p>{message}</p>
+
+            {downloadUrl && (
+              <a
+                className="official-button download-button"
+                href={downloadUrl}
+                download={downloadName}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ↓ वीडियो डाउनलोड करें
+              </a>
+            )}
+
             {officialUrl && (
               <a className="official-button" href={officialUrl} target="_blank" rel="noopener noreferrer">
                 मूल वीडियो खोलें ↗
@@ -130,7 +196,7 @@ export default function Home() {
 
         <p className="disclaimer">
           केवल सार्वजनिक लिंक होने से डाउनलोड की अनुमति सुनिश्चित नहीं होती।
-          वीडियो के अधिकारों और प्लेटफॉर्म के नियमों का पालन करें।
+          डाउनलोड की उपलब्धता स्रोत के नियमों और ब्राउज़र की नीतियों पर निर्भर करती है।
         </p>
       </section>
 
@@ -154,20 +220,20 @@ export default function Home() {
           <article className="step-card">
             <span className="step-number">01</span>
             <div className="step-icon">↗</div>
-            <h3>लिंक कॉपी करें</h3>
-            <p>अपने चुने हुए प्लेटफॉर्म से वीडियो का लिंक लें।</p>
+            <h3>वीडियो लिंक कॉपी करें</h3>
+            <p>किसी समर्थित प्लेटफ़ॉर्म का लिंक या अधिकृत सीधे वीडियो फ़ाइल URL लें।</p>
           </article>
           <article className="step-card">
             <span className="step-number">02</span>
             <div className="step-icon">⌕</div>
             <h3>लिंक जाँचें</h3>
-            <p>लिंक पेस्ट करें। वेबसाइट प्लेटफॉर्म की पहचान करेगी।</p>
+            <p>लिंक पेस्ट करें और पुष्टि करें कि आपको वीडियो डाउनलोड करने का अधिकार है।</p>
           </article>
           <article className="step-card">
             <span className="step-number">03</span>
             <div className="step-icon">↓</div>
             <h3>उपलब्ध विकल्प देखें</h3>
-            <p>अधिकृत डाउनलोड उपलब्ध होने पर ही डाउनलोड विकल्प इस्तेमाल करें।</p>
+            <p>सीधे वीडियो URL के लिए डाउनलोड आज़माएँ। स्रोत डाउनलोड रोक सकता है।</p>
           </article>
         </div>
       </section>
@@ -180,7 +246,7 @@ export default function Home() {
           <a href="#privacy">गोपनीयता</a>
           <a href="#terms">नियम एवं शर्तें</a>
         </div>
-        <small>© VideoDrop · Demo version</small>
+        <small>© VideoDrop · Browser download demo</small>
       </footer>
     </main>
   );

@@ -136,3 +136,31 @@ h1 span { color: var(--accent); }
   .step-grid { grid-template-columns: 1fr; }
   .step-card { padding: 22px; }
 }
+
+/* Direct video download controls */
+.rights-check {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 2px 4px !important;
+  color: var(--muted);
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.7;
+  cursor: pointer;
+}
+.rights-check input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+.download-button {
+  margin: 4px 8px 4px 0;
+  background: var(--accent);
+  color: #11170b;
+}
+.download-button:hover {
+  background: #c8ff88;
+}
