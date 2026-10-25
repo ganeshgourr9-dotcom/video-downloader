@@ -205,8 +205,13 @@ export default function Home() {
             )}
           </div>
 
-<button className="submit-button" type="submit">
-            लिंक जाँचें <span>→</span>
+<label htmlFor="quick-download-format">फ़ॉर्मैट चुनें</label>
+          <select id="quick-download-format" value={selectedFormat} onChange={(event) => setSelectedFormat(event.target.value as "mp4" | "mp3")}>
+            <option value="mp4">MP4 वीडियो</option>
+            <option value="mp3">MP3 ऑडियो</option>
+          </select>
+          <button className="submit-button" type="submit" disabled={isLoading}>
+            {isLoading ? "डाउनलोड हो रहा है…" : "सीधे डाउनलोड करें"} <span>→</span>
           </button>
           <p className="privacy-note"><span>✓</span> कोई अकाउंट नहीं · कोई साइन-अप नहीं</p>
         </form>
