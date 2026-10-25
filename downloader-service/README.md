@@ -1,6 +1,6 @@
 # VideoDrop downloader service
 
-A separate container service for media extraction. It is designed to run on a container host (for example, Render or Railway), not inside a Cloudflare Worker. The Next.js frontend can call it after `NEXT_PUBLIC_DOWNLOADER_API_URL` is configured.
+A separate container service for media extraction. It is designed to run on a container host (for example, Render or Railway), not inside a Cloudflare Worker. The Next.js frontend has API integration and can call it after `NEXT_PUBLIC_DOWNLOADER_API_URL` is configured in the frontend hosting environment. Rebuild/redeploy the frontend after setting this build-time variable.
 
 ## Endpoints
 
