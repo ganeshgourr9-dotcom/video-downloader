@@ -55,8 +55,25 @@ def validate_public_url(value: str) -> str:
         raise HTTPException(status_code=400, detail=str(exc) or "Invalid URL.") from exc
 
 
+def extractor_args() -> dict:
+    return {
+        "youtube": {"player_client": ["mweb", "tv", "web_safari"]},
+        "youtubepot-bgutilhttp": {"base_url": "http://127.0.0.1:4416"},
+    }
+
+
 def extract_info(url: str) -> dict:
-    options = {"quiet": True, "no_warnings": True, "noplaylist": True, "skip_download": True, "socket_timeout": 20, "extractor_retries": 2, "ignoreerrors": False, "extractor_args": {"youtube": {"player_client": ["mweb", "tv", "web_safari"]}, "youtube-bgutilscript": {"server_home": "/opt/bgutil-ytdlp-pot-provider/server"}}, "verbose": True}
+    options = {
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "skip_download": True,
+        "socket_timeout": 20,
+        "extractor_retries": 2,
+        "ignoreerrors": False,
+        "extractor_args": extractor_args(),
+        "verbose": True,
+    }
     try:
         with yt_dlp.YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -94,7 +111,20 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
     safe_title = re.sub(r"[^A-Za-z0-9._-]+", "-", info_data.get("title") or "videodrop-video").strip("-._")[:80] or "videodrop-video"
     tmp = tempfile.mkdtemp(prefix="job-", dir=TEMP_ROOT)
     output = str(Path(tmp) / "%(title).80B.%(ext)s")
-    options = {"quiet": True, "no_warnings": True, "noplaylist": True, "socket_timeout": 20, "retries": 1, "fragment_retries": 1, "extractor_retries": 2, "extractor_args": {"youtube": {"player_client": ["mweb", "tv", "web_safari"]}, "youtube-bgutilscript": {"server_home": "/opt/bgutil-ytdlp-pot-provider/server"}}, "verbose": True, "outtmpl": output, "max_filesize": MAX_FILE_BYTES, "overwrites": True}
+    options = {
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "socket_timeout": 20,
+        "retries": 1,
+        "fragment_retries": 1,
+        "extractor_retries": 2,
+        "extractor_args": extractor_args(),
+        "verbose": True,
+        "outtmpl": output,
+        "max_filesize": MAX_FILE_BYTES,
+        "overwrites": True,
+    }
     if request.format == "mp3":
         options.update({"format": "bestaudio/best", "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]})
     else:
