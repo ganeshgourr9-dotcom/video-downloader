@@ -56,12 +56,15 @@ def validate_public_url(value: str) -> str:
 
 
 def extractor_args() -> dict:
-    # Prefer tv_downgraded first, then try browser clients. YouTube may block
-    # clients differently, and mweb may require a video-bound GVS PO Token.
-    # BgUtils is configured via base_url; disable_innertube is obsolete.
-    logger.info("Using YouTube player clients in fallback order: tv_downgraded, web_safari, mweb; PO Token server: http://127.0.0.1:4416")
+    # YouTube returned 429 for the initial watch webpage. Skip that request
+    # and try the downgraded TV client first, then browser clients as fallbacks.
+    # PO Token support remains configured for clients that request one.
+    logger.info("YouTube extraction: skip initial webpage; clients=tv_downgraded,web_safari,mweb; PO Token server=http://127.0.0.1:4416")
     return {
-        "youtube": {"player_client": ["tv_downgraded", "web_safari", "mweb"]},
+        "youtube": {
+            "player_client": ["tv_downgraded", "web_safari", "mweb"],
+            "player_skip": ["webpage"],
+        },
         "youtubepot-bgutilhttp": {
             "base_url": "http://127.0.0.1:4416",
         },
