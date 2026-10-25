@@ -57,7 +57,7 @@ export default function Home() {
       return;
     }
 
-    const extension = parsed.pathname.match(/\\.(mp4|webm|mov|m4v|ogv)$/i)?.[1]?.toLowerCase();
+    const extension = parsed.pathname.match(/\.(mp4|webm|mov|m4v|ogv)$/i)?.[1]?.toLowerCase();
     if (!hasRights) {
       setMessage("आगे बढ़ने से पहले पुष्टि करें कि आपको इस वीडियो को डाउनलोड करने का अधिकार है।");
       return;
