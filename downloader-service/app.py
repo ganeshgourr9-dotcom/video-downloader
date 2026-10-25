@@ -58,7 +58,7 @@ def validate_public_url(value: str) -> str:
 def extractor_args() -> dict:
     return {
         "youtube": {"player_client": ["mweb", "tv", "web_safari"]},
-        "youtubepot-bgutilhttp": {"base_url": "http://127.0.0.1:4416"},
+        "youtubepot-bgutilhttp": {"base_url": "http://127.0.0.1:4416", "disable_innertube": ["1"]},
     }
 
 
