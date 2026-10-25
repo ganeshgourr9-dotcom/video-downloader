@@ -56,7 +56,7 @@ def validate_public_url(value: str) -> str:
 
 
 def extract_info(url: str) -> dict:
-    options = {"quiet": True, "no_warnings": True, "noplaylist": True, "skip_download": True, "socket_timeout": 15, "extractor_retries": 1, "ignoreerrors": False}
+    options = {"quiet": True, "no_warnings": True, "noplaylist": True, "skip_download": True, "socket_timeout": 20, "extractor_retries": 2, "ignoreerrors": False, "extractor_args": {"youtube": {"player_client": ["web", "mweb", "tv"]}}}
     try:
         with yt_dlp.YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
