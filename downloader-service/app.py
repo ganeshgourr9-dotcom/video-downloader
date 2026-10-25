@@ -55,8 +55,9 @@ def validate_public_url(value: str) -> str:
 def extractor_args() -> dict:
     # Try multiple supported clients. YouTube may reject one client while
     # another can still return player metadata. BgUtils uses its local HTTP server.
+    logger.info("Using YouTube player clients in fallback order: tv_downgraded, web_safari, mweb; PO Token server: http://127.0.0.1:4416")
     return {
-        "youtube": {"player_client": ["mweb", "tv", "web_safari"]},
+        "youtube": {"player_client": ["tv_downgraded", "web_safari", "mweb"]},
         "youtubepot-bgutilhttp": {"base_url": "http://127.0.0.1:4416"},
     }
 
