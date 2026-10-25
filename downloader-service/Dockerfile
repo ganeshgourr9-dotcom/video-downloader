@@ -22,4 +22,4 @@ COPY app.py ./app.py
 RUN useradd --create-home --uid 10001 appuser && mkdir -p /tmp/videodrop && chown -R appuser:appuser /tmp/videodrop /app /opt/bgutil-ytdlp-pot-provider
 USER appuser
 EXPOSE 10000
-CMD ["sh", "-c", "(cd /opt/bgutil-ytdlp-pot-provider/server/node_modules && deno run --allow-env --allow-net --allow-ffi=. --allow-read=. ../src/main.ts --host 127.0.0.1) & until curl -fsS http://127.0.0.1:4416/ >/dev/null; do sleep 1; done; exec uvicorn app:app --host 0.0.0.0 --port ${PORT:-10000}"]
+CMD ["sh", "-c", "(cd /opt/bgutil-ytdlp-pot-provider/server/node_modules && deno run --allow-env --allow-net --allow-ffi=. --allow-read=. ../src/main.ts --host 127.0.0.1) & until curl -sS --max-time 2 http://127.0.0.1:4416/ >/dev/null; do sleep 1; done; exec uvicorn app:app --host 0.0.0.0 --port ${PORT:-10000}"]
