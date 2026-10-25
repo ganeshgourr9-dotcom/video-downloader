@@ -69,7 +69,7 @@ def extractor_args() -> dict:
 
 def extract_info(url: str) -> dict:
     options = {
-        "quiet": True,
+        "quiet": False,
         "no_warnings": False,
         "noplaylist": True,
         "skip_download": True,
@@ -117,7 +117,7 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
     tmp = tempfile.mkdtemp(prefix="job-", dir=TEMP_ROOT)
     output = str(Path(tmp) / "%(title).80B.%(ext)s")
     options = {
-        "quiet": True,
+        "quiet": False,
         "no_warnings": False,
         "noplaylist": True,
         "socket_timeout": 20,
