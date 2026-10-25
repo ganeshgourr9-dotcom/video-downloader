@@ -222,7 +222,17 @@ export default function Home() {
             <strong>{downloadUrl ? "वीडियो फ़ाइल का लिंक मिला" : officialUrl ? "सोशल-मीडिया लिंक मिला" : "लिंक जाँचें"}</strong>
             <p>{message}</p>
 
-            {apiVideo && (\n              <div className="download-options">\n                <label htmlFor="download-format">फ़ॉर्मैट चुनें</label>\n                <select id="download-format" value={selectedFormat} onChange={(event) => setSelectedFormat(event.target.value as "mp4" | "mp3")}>\n                  <option value="mp4">MP4 वीडियो</option>\n                  <option value="mp3">MP3 ऑडियो</option>\n                </select>\n                <button className="official-button download-button" type="button" onClick={handleApiDownload} disabled={isLoading}>\n                  {isLoading ? "डाउनलोड तैयार हो रहा है…" : `↓ ${selectedFormat.toUpperCase()} डाउनलोड करें`}\n                </button>\n              </div>\n            )}\n\n            {downloadUrl && (
+            {apiVideo && (
+              <div className="download-options">
+                <label htmlFor="download-format">फ़ॉर्मैट चुनें</label>
+                <select id="download-format" value={selectedFormat} onChange={(event) => setSelectedFormat(event.target.value as "mp4" | "mp3")}>
+                  <option value="mp4">MP4 वीडियो</option>
+                  <option value="mp3">MP3 ऑडियो</option>
+                </select>
+                <button className="official-button download-button" type="button" onClick={handleApiDownload} disabled={isLoading}>
+                  {isLoading ? "डाउनलोड तैयार हो रहा है…" : `↓ ${selectedFormat.toUpperCase()} डाउनलोड करें`}
+                </button>
+              </div>\n            )}\n\n            {downloadUrl && (
               <a
                 className="official-button download-button"
                 href={downloadUrl}
