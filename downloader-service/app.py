@@ -56,11 +56,11 @@ def validate_public_url(value: str) -> str:
 
 
 def extractor_args() -> dict:
-    # Do not load the BgUtils PO-token provider plugin: it has caused failures
-    # before player response extraction in some current YouTube sessions.
-    # Let the installed yt-dlp version select its maintained default clients.
-    logger.info("YouTube extraction: BgUtils provider disabled; using yt-dlp default clients")
-    return {}
+    # BgUtils is disabled. Try a documented alternate YouTube client set because
+    # the default client selection currently returns no player response on Render.
+    clients = ["web", "mweb", "tv"]
+    logger.info("YouTube extraction: BgUtils disabled; trying player clients %s", ",".join(clients))
+    return {"youtube": {"player_client": clients}}
 
 def extract_info(url: str) -> dict:
     options = {
