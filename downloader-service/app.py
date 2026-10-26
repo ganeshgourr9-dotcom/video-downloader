@@ -16,6 +16,26 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger("videodrop.downloader")
 
+class YtDlpLogBridge:
+    """Expose useful yt-dlp extraction diagnostics in Render logs."""
+
+    def debug(self, message):
+        message = str(message)
+        if any(term in message.lower() for term in (
+            "http error", "player", "api json", "webpage", "token",
+            "client", "warning", "error", "downloading", "response",
+        )):
+            logger.info("yt-dlp: %s", message[:1200])
+
+    def warning(self, message):
+        logger.warning("yt-dlp: %s", str(message)[:1200])
+
+    def error(self, message):
+        logger.error("yt-dlp: %s", str(message)[:1200])
+
+
+YTDLP_LOG_BRIDGE = YtDlpLogBridge()
+
 app = FastAPI(title="VideoDrop Downloader API", version="0.1.0")
 origins = [item.strip().rstrip("/") for item in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",") if item.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type"])
@@ -73,6 +93,7 @@ def extract_info(url: str) -> dict:
         "ignoreerrors": False,
         "extractor_args": extractor_args(),
         "verbose": True,
+        "logger": YTDLP_LOG_BRIDGE,
     }
     try:
         with yt_dlp.YoutubeDL(options) as ydl:
