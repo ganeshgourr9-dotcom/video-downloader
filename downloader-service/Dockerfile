@@ -4,7 +4,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
+# yt-dlp's current YouTube extraction requires a supported JavaScript runtime.
+# Install Deno (recommended by yt-dlp) in the image so it is available on PATH.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates curl unzip \
+    && curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh \
+    && deno --version \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
