@@ -11,6 +11,26 @@ from urllib.parse import urlparse
 import yt_dlp
 
 logger = logging.getLogger("videodrop.downloader")
+
+class YtDlpLogBridge:
+    """Expose useful yt-dlp extraction diagnostics in Render logs."""
+
+    def debug(self, message):
+        message = str(message)
+        if any(term in message.lower() for term in (
+            "http error", "player", "api json", "webpage", "token",
+            "client", "warning", "error", "downloading", "response",
+        )):
+            logger.info("yt-dlp: %s", message[:1200])
+
+    def warning(self, message):
+        logger.warning("yt-dlp: %s", str(message)[:1200])
+
+    def error(self, message):
+        logger.error("yt-dlp: %s", str(message)[:1200])
+
+
+YTDLP_LOG_BRIDGE = YtDlpLogBridge()
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -100,7 +120,8 @@ def download(request: DownloadRequest, background_tasks: BackgroundTasks):
     safe_title = re.sub(r"[^A-Za-z0-9._-]+", "-", info_data.get("title") or "videodrop-video").strip("-._")[:80] or "videodrop-video"
     tmp = tempfile.mkdtemp(prefix="job-", dir=TEMP_ROOT)
     output = str(Path(tmp) / "%(title).80B.%(ext)s")
-    options = {"quiet": True, "no_warnings": False, "noplaylist": True, "socket_timeout": 20, "retries": 1, "fragment_retries": 1, "extractor_retries": 1, "extractor_args": extractor_args(), "verbose": True, "outtmpl": output, "max_filesize": MAX_FILE_BYTES, "overwrites": True}
+    options = {"quiet": True, "no_warnings": False, "noplaylist": True, "socket_timeout": 20, "retries": 1, "fragment_retries": 1, "extractor_retries": 1, "extractor_args": extractor_args(), "verbose": True,
+        "logger": YTDLP_LOG_BRIDGE, "outtmpl": output, "max_filesize": MAX_FILE_BYTES, "overwrites": True}
     if request.format == "mp3":
         options.update({"format": "bestaudio/best", "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]})
     else:
