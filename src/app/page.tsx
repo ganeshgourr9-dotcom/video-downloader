@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 
@@ -12,6 +12,10 @@ export default function Home() {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [downloadName, setDownloadName] = useState("videodrop-video.mp4");
   const [hasRights, setHasRights] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState<"mp4" | "mp3">("mp4");
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiVideo, setApiVideo] = useState(false);
+  const apiBase = process.env.NEXT_PUBLIC_DOWNLOADER_API_URL?.replace(/\/$/, "");
 
   function detectPlatform(value: string): Platform | null {
     try {
@@ -34,57 +38,101 @@ export default function Home() {
     setDownloadUrl("");
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     clearResults();
+    setApiVideo(false);
 
     const value = url.trim();
     let parsed: URL;
-
     try {
       parsed = new URL(value);
     } catch {
-      setMessage("कृपया एक सही HTTPS वीडियो लिंक डालें।");
+      setMessage("कृपया सही वीडियो लिंक डालें।");
       return;
     }
 
-    const isLocalhost =
-        process.env.NODE_ENV === "development" &&
-        (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
-
-      if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLocalhost)) {
-        setMessage("सुरक्षा के लिए केवल HTTPS लिंक स्वीकार किए जाते हैं।");
-        return;
-      }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      setMessage("केवल HTTP या HTTPS लिंक स्वीकार किए जाते हैं।");
+      return;
+    }
 
     const extension = parsed.pathname.match(/\.(mp4|webm|mov|m4v|ogv)$/i)?.[1]?.toLowerCase();
+    if (!hasRights) {
+      setMessage("आगे बढ़ने से पहले पुष्टि करें कि आपको इस वीडियो को डाउनलोड करने का अधिकार है।");
+      return;
+    }
+
+    if (apiBase) {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${apiBase}/api/info`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: parsed.href }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "वीडियो की जानकारी नहीं मिल सकी।");
+        setPlatform(detectPlatform(value) || "YouTube");
+        setOfficialUrl(value);
+        setApiVideo(true);
+        setMessage(`वीडियो मिला: ${data.title || "वीडियो"}। अब MP4 या MP3 चुनकर डाउनलोड करें।`);
+        return;
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "वीडियो की जानकारी प्राप्त नहीं हो सकी।");
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
     if (extension) {
-      if (!hasRights) {
-        setMessage("डाउनलोड से पहले पुष्टि करें कि आपको इस वीडियो को डाउनलोड करने और उपयोग करने का अधिकार है।");
-        return;
-      }
-
       setDownloadUrl(parsed.href);
       setDownloadName(`videodrop-video.${extension}`);
-      setMessage(
-        "वीडियो फ़ाइल जैसा लिंक पहचाना गया। डाउनलोड स्रोत की अनुमति और ब्राउज़र की नीतियों पर निर्भर करता है।"
-      );
+      setMessage("सीधा वीडियो फ़ाइल लिंक पहचाना गया। डाउनलोड स्रोत की अनुमति और ब्राउज़र की नीतियों पर निर्भर करता है।");
       return;
     }
 
     const detected = detectPlatform(value);
-
     if (!detected) {
-      setMessage("यह समर्थित प्लेटफ़ॉर्म लिंक या पहचानी गई वीडियो फ़ाइल नहीं है। HTTPS वीडियो फ़ाइल URL आज़माएँ।");
+      setMessage("यह समर्थित प्लेटफ़ॉर्म लिंक या पहचानी गई वीडियो फ़ाइल नहीं है।");
       return;
     }
 
     setPlatform(detected);
     setOfficialUrl(value);
-    setMessage(
-      "सोशल-मीडिया लिंक पहचान लिया गया। यह सामान्य पेज लिंक है, सीधे वीडियो फ़ाइल नहीं। इस डेमो में इसका डाउनलोड उपलब्ध नहीं है।"
-    );
+    setMessage("लिंक पहचान लिया गया, लेकिन डाउनलोड सर्वर अभी कॉन्फ़िगर नहीं है। NEXT_PUBLIC_DOWNLOADER_API_URL सेट करने के बाद सोशल-मीडिया डाउनलोड उपलब्ध होगा।");
+  }
+
+  async function handleApiDownload() {
+    if (!apiBase || !officialUrl || !hasRights) return;
+    setIsLoading(true);
+    setMessage(`${selectedFormat.toUpperCase()} तैयार हो रहा है। फ़ाइल के आकार और स्रोत के अनुसार समय लग सकता है…`);
+    try {
+      const response = await fetch(`${apiBase}/api/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: officialUrl, format: selectedFormat }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || "डाउनलोड विफल रहा। कृपया दूसरा लिंक आज़माएँ।");
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `videodrop-video.${selectedFormat}`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      setMessage("डाउनलोड शुरू हो गया है।");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "डाउनलोड विफल रहा।");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -173,6 +221,19 @@ export default function Home() {
           <div className="result" role="status">
             <strong>{downloadUrl ? "वीडियो फ़ाइल का लिंक मिला" : officialUrl ? "सोशल-मीडिया लिंक मिला" : "लिंक जाँचें"}</strong>
             <p>{message}</p>
+
+            {apiVideo && (
+              <div className="download-options">
+                <label htmlFor="download-format">फ़ॉर्मैट चुनें</label>
+                <select id="download-format" value={selectedFormat} onChange={(event) => setSelectedFormat(event.target.value as "mp4" | "mp3")}>
+                  <option value="mp4">MP4 वीडियो</option>
+                  <option value="mp3">MP3 ऑडियो</option>
+                </select>
+                <button className="official-button download-button" type="button" onClick={handleApiDownload} disabled={isLoading}>
+                  {isLoading ? "डाउनलोड तैयार हो रहा है…" : `↓ ${selectedFormat.toUpperCase()} डाउनलोड करें`}
+                </button>
+              </div>
+            )}
 
             {downloadUrl && (
               <a
